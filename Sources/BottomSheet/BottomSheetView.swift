@@ -24,9 +24,19 @@ where BottomSheetPositionEnum.RawValue == CGFloat,
     fileprivate let options: [BottomSheet.Options]
     fileprivate let headerContent: HContent?
     fileprivate let mainContent: MContent
-    
-    fileprivate let allCases = BottomSheetPositionEnum.allCases.sorted(by: { $0.rawValue < $1.rawValue })
-    
+
+    fileprivate let allCases = BottomSheetPositionEnum.allCases.sorted(by: {
+        if $0.rawValue < 0 && $0.rawValue < 0 {
+            return $0.rawValue < $1.rawValue
+        } else if $0.rawValue < 0 {
+            return false
+        } else if $1.rawValue < 0 {
+            return true
+        } else {
+            return $0.rawValue < $1.rawValue
+        }
+    })
+
     // Position
     fileprivate var isHiddenPosition: Bool {
         return self.bottomSheetPosition.rawValue == 0
@@ -228,11 +238,11 @@ where BottomSheetPositionEnum.RawValue == CGFloat,
         if self.options.backgroundBlur {
             if self.options.absolutePositionValue {
                 return Double(
-                    (self.bottomSheetPosition.rawValue - self.translation) / geometry.size.height
+                    (self.positionFromBottom(geometry: geometry) - self.translation) / geometry.size.height
                 )
             } else {
                 return Double(
-                    (self.bottomSheetPosition.rawValue * geometry.size.height - self.translation) / geometry.size.height
+                    (self.positionFromBottom(geometry: geometry) * geometry.size.height - self.translation) / geometry.size.height
                 )
             }
         } else {
@@ -255,7 +265,7 @@ where BottomSheetPositionEnum.RawValue == CGFloat,
         if self.options.absolutePositionValue {
             return min(
                 max(
-                    self.bottomSheetPosition.rawValue - self.translation,
+                    self.positionFromBottom(geometry: geometry) - self.translation,
                     0
                 ),
                 geometry.size.height * 1.05
@@ -263,7 +273,7 @@ where BottomSheetPositionEnum.RawValue == CGFloat,
         } else {
             return min(
                 max(
-                    (geometry.size.height * self.bottomSheetPosition.rawValue) - self.translation,
+                    (geometry.size.height * self.positionFromBottom(geometry: geometry)) - self.translation,
                     0
                 ),
                 geometry.size.height * 1.05
@@ -280,13 +290,13 @@ where BottomSheetPositionEnum.RawValue == CGFloat,
         } else if self.isBottomPosition {
             if self.options.absolutePositionValue {
                 return max(
-                    geometry.size.height - self.bottomSheetPosition.rawValue +
+                    geometry.size.height - self.positionFromBottom(geometry: geometry) +
                     self.translation + geometry.safeAreaInsets.bottom,
                     geometry.size.height * -0.05
                 )
             } else {
                 return max(
-                    geometry.size.height - (geometry.size.height * self.bottomSheetPosition.rawValue) +
+                    geometry.size.height - (geometry.size.height * self.positionFromBottom(geometry: geometry)) +
                     self.translation + geometry.safeAreaInsets.bottom,
                     geometry.size.height * -0.05
                 )
@@ -294,19 +304,31 @@ where BottomSheetPositionEnum.RawValue == CGFloat,
         } else {
             if self.options.absolutePositionValue {
                 return max(
-                    geometry.size.height - self.bottomSheetPosition.rawValue + self.translation,
+                    geometry.size.height - self.positionFromBottom(geometry: geometry) + self.translation,
                     geometry.size.height * -0.05
                 )
             } else {
                 return max(
-                    geometry.size.height - (geometry.size.height * self.bottomSheetPosition.rawValue) +
+                    geometry.size.height - (geometry.size.height * self.positionFromBottom(geometry: geometry)) +
                     self.translation,
                     geometry.size.height * -0.05
                 )
             }
         }
     }
-    
+
+    fileprivate func positionFromBottom(geometry: GeometryProxy) -> CGFloat {
+        if options.absolutePositionValue {
+            if bottomSheetPosition.rawValue >= 0 {
+                return bottomSheetPosition.rawValue
+            } else {
+                return geometry.size.height + bottomSheetPosition.rawValue // rawValue is negative
+            }
+        } else {
+            return bottomSheetPosition.rawValue
+        }
+    }
+
     fileprivate func endEditing() {
         UIApplication.shared.endEditing()
     }

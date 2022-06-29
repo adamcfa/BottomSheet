@@ -24,9 +24,10 @@ where BottomSheetPositionEnum.RawValue == CGFloat,
     fileprivate let options: [BottomSheet.Options]
     fileprivate let headerContent: HContent?
     fileprivate let mainContent: MContent
-    
-    fileprivate let allCases = BottomSheetPositionEnum.allCases.sorted(by: { $0.rawValue < $1.rawValue })
-    
+
+    /// BottomSheetPosition values from top to bottom.
+    fileprivate let allCases: [BottomSheetPositionEnum]
+
     // Position
     fileprivate var isHiddenPosition: Bool {
         return self.bottomSheetPosition.rawValue == 0
@@ -226,15 +227,9 @@ where BottomSheetPositionEnum.RawValue == CGFloat,
     // Functions
     fileprivate func opacityValue(geometry: GeometryProxy) -> Double {
         if self.options.backgroundBlur {
-            if self.options.absolutePositionValue {
-                return Double(
-                    (self.bottomSheetPosition.rawValue - self.translation) / geometry.size.height
-                )
-            } else {
-                return Double(
-                    (self.bottomSheetPosition.rawValue * geometry.size.height - self.translation) / geometry.size.height
-                )
-            }
+            return Double(
+                (self.positionFromBottom(geometry: geometry) - self.translation) / geometry.size.height
+            )
         } else {
             return 0
         }
@@ -252,23 +247,13 @@ where BottomSheetPositionEnum.RawValue == CGFloat,
     }
     
     fileprivate func frameHeightValue(geometry: GeometryProxy) -> Double {
-        if self.options.absolutePositionValue {
-            return min(
-                max(
-                    self.bottomSheetPosition.rawValue - self.translation,
-                    0
-                ),
-                geometry.size.height * 1.05
-            )
-        } else {
-            return min(
-                max(
-                    (geometry.size.height * self.bottomSheetPosition.rawValue) - self.translation,
-                    0
-                ),
-                geometry.size.height * 1.05
-            )
-        }
+        return min(
+            max(
+                self.positionFromBottom(geometry: geometry) - self.translation,
+                0
+            ),
+            geometry.size.height * 1.05
+        )
     }
     
     fileprivate func offsetYValue(geometry: GeometryProxy) -> Double {
@@ -278,35 +263,41 @@ where BottomSheetPositionEnum.RawValue == CGFloat,
                 geometry.size.height * -0.05
             )
         } else if self.isBottomPosition {
-            if self.options.absolutePositionValue {
-                return max(
-                    geometry.size.height - self.bottomSheetPosition.rawValue +
-                    self.translation + geometry.safeAreaInsets.bottom,
-                    geometry.size.height * -0.05
-                )
-            } else {
-                return max(
-                    geometry.size.height - (geometry.size.height * self.bottomSheetPosition.rawValue) +
-                    self.translation + geometry.safeAreaInsets.bottom,
-                    geometry.size.height * -0.05
-                )
-            }
+            return max(
+                geometry.size.height - self.positionFromBottom(geometry: geometry) +
+                self.translation + geometry.safeAreaInsets.bottom,
+                geometry.size.height * -0.05
+            )
         } else {
-            if self.options.absolutePositionValue {
-                return max(
-                    geometry.size.height - self.bottomSheetPosition.rawValue + self.translation,
-                    geometry.size.height * -0.05
-                )
-            } else {
-                return max(
-                    geometry.size.height - (geometry.size.height * self.bottomSheetPosition.rawValue) +
-                    self.translation,
-                    geometry.size.height * -0.05
-                )
-            }
+            return max(
+                geometry.size.height - self.positionFromBottom(geometry: geometry) + self.translation,
+                geometry.size.height * -0.05
+            )
         }
     }
-    
+
+    /// Given the current `self.bottomSheetPosition`, `self.options`, and `geometry`,
+    /// how many points from the bottom should the top of the sheet be?
+    fileprivate func positionFromBottom(geometry: GeometryProxy) -> CGFloat {
+        Self.positionFromBottom(
+            height: geometry.size.height,
+            position: bottomSheetPosition,
+            optionAbsolutePositionValue: options.absolutePositionValue)
+    }
+
+    fileprivate static func positionFromBottom(height: CGFloat, position: BottomSheetPositionEnum, optionAbsolutePositionValue: Bool) -> CGFloat {
+        if optionAbsolutePositionValue {
+            if position.rawValue >= 0 {
+                return position.rawValue
+            } else {
+                return height + position.rawValue // rawValue is negative
+            }
+        } else {
+            let percent = position.rawValue >= 0 ? position.rawValue : (1 + position.rawValue)
+            return height * percent
+        }
+    }
+
     fileprivate func endEditing() {
         UIApplication.shared.endEditing()
     }
@@ -406,10 +397,21 @@ where BottomSheetPositionEnum.RawValue == CGFloat,
     
     // Initializer
     init(bottomSheetPosition: Binding<BottomSheetPositionEnum>,
+         availablePositions: [BottomSheetPositionEnum],
          options: [BottomSheet.Options],
          @ViewBuilder headerContent: () -> HContent?,
          @ViewBuilder mainContent: () -> MContent) {
         self._bottomSheetPosition = bottomSheetPosition
+        self.allCases = {
+            // Assumption: if using absolutePositionValue with negative values, none of the values will cross the other side.
+            // That is, a positive value would not result in a higher sheet position than a negative value.
+            // If this assumption is broken then allCases cannot be precomputed like this.
+            let placeholderHeight: CGFloat = 5000
+            let optAbsPosValue = options.absolutePositionValue
+            return availablePositions.sorted(by: { a, b in
+                Self.positionFromBottom(height: placeholderHeight, position: a, optionAbsolutePositionValue: optAbsPosValue) < Self.positionFromBottom(height: placeholderHeight, position: b, optionAbsolutePositionValue: optAbsPosValue)
+            })
+        }()
         self.options = options
         self.headerContent = headerContent()
         self.mainContent = mainContent()
@@ -419,17 +421,20 @@ where BottomSheetPositionEnum.RawValue == CGFloat,
 internal extension BottomSheetView
 where HContent == ModifiedContent<ModifiedContent<Text, _EnvironmentKeyWritingModifier<Int?>>, _PaddingLayout> {
     init(bottomSheetPosition: Binding<BottomSheetPositionEnum>,
+         availablePositions: [BottomSheetPositionEnum],
          options: [BottomSheet.Options],
          title: String?,
          @ViewBuilder content: () -> MContent) {
         if title == nil {
             self.init(bottomSheetPosition: bottomSheetPosition,
+                      availablePositions: availablePositions,
                       options: options,
                       headerContent: { return nil },
                       mainContent: content)
         } else {
             let hContent = Text(title!).font(.title).bold().lineLimit(1).padding(.bottom) as? HContent
             self.init(bottomSheetPosition: bottomSheetPosition,
+                      availablePositions: availablePositions,
                       options: options,
                       headerContent: { hContent },
                       mainContent: content)

@@ -14,6 +14,7 @@ public extension View {
      - Parameter bottomSheetPosition: A binding that saves the current state of the BottomSheet.
      This can be any `enum` that conforms to `CGFloat`, `CaseIterable` and `Equatable`.
      For more information about custom enums see `BottomSheetPosition`.
+     - Parameter availablePositions: Positions which may be moved to by the user.
      - Parameter options: An array that contains the settings / options for the BottomSheet.
      Can be `nil`. For more information about the possible options see `BottomSheet.Options`.
      - Parameter headerContent: A view that is used as header content for the BottomSheet.
@@ -23,6 +24,7 @@ public extension View {
     func bottomSheet<HContent: View,
                      MContent: View,
                      BottomSheetPositionEnum: RawRepresentable>(bottomSheetPosition: Binding<BottomSheetPositionEnum>,
+                                                                availablePositions: [BottomSheetPositionEnum],
                                                                 options: [BottomSheet.Options] =  [],
                                                                 @ViewBuilder headerContent: () -> HContent? = { return nil },
                                                                 @ViewBuilder mainContent: () -> MContent) -> some View
@@ -32,6 +34,7 @@ public extension View {
               ZStack {
                   self
                   BottomSheetView(bottomSheetPosition: bottomSheetPosition,
+                                  availablePositions: availablePositions,
                                   options: options,
                                   headerContent: headerContent,
                                   mainContent: mainContent)
@@ -44,6 +47,7 @@ public extension View {
      - Parameter bottomSheetPosition: A binding that saves the current state of the BottomSheet.
      This can be any `enum` that conforms to `CGFloat`, `CaseIterable` and `Equatable`.
      For more information about custom enums see `BottomSheetPosition`.
+     - Parameter availablePositions: Positions which may be moved to by the user.
      - Parameter options: An array that contains the settings / options for the BottomSheet.
      For more information about the possible options see `BottomSheet.Options`.
      - Parameter title: A string that is used as the title for the BottomSheet.
@@ -52,6 +56,7 @@ public extension View {
      */
     func bottomSheet<MContent: View,
                      BottomSheetPositionEnum: RawRepresentable>(bottomSheetPosition: Binding<BottomSheetPositionEnum>,
+                                                                availablePositions: [BottomSheetPositionEnum],
                                                                 options: [BottomSheet.Options] = [],
                                                                 title: String? = nil,
                                                                 @ViewBuilder content: () -> MContent) -> some View
@@ -61,6 +66,7 @@ public extension View {
               ZStack {
                   self
                   BottomSheetView(bottomSheetPosition: bottomSheetPosition,
+                                  availablePositions: availablePositions,
                                   options: options,
                                   title: title,
                                   content: content)

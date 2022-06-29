@@ -25,17 +25,8 @@ where BottomSheetPositionEnum.RawValue == CGFloat,
     fileprivate let headerContent: HContent?
     fileprivate let mainContent: MContent
 
-    fileprivate let allCases = BottomSheetPositionEnum.allCases.sorted(by: {
-        if $0.rawValue < 0 && $0.rawValue < 0 {
-            return $0.rawValue < $1.rawValue
-        } else if $0.rawValue < 0 {
-            return false
-        } else if $1.rawValue < 0 {
-            return true
-        } else {
-            return $0.rawValue < $1.rawValue
-        }
-    })
+    /// BottomSheetPosition values from top to bottom.
+    fileprivate let allCases: [BottomSheetPositionEnum]
 
     // Position
     fileprivate var isHiddenPosition: Bool {
@@ -317,15 +308,23 @@ where BottomSheetPositionEnum.RawValue == CGFloat,
         }
     }
 
+    /// Given the current `bottomSheetPosition` and `geometry`, what should the position of the sheet be in points from the bottom?
     fileprivate func positionFromBottom(geometry: GeometryProxy) -> CGFloat {
-        if options.absolutePositionValue {
-            if bottomSheetPosition.rawValue >= 0 {
-                return bottomSheetPosition.rawValue
+        Self.positionFromBottom(
+            height: geometry.size.height,
+            position: bottomSheetPosition,
+            optionAbsolutePositionValue: options.absolutePositionValue)
+    }
+
+    fileprivate static func positionFromBottom(height: CGFloat, position: BottomSheetPositionEnum, optionAbsolutePositionValue: Bool) -> CGFloat {
+        if optionAbsolutePositionValue {
+            if position.rawValue >= 0 {
+                return position.rawValue
             } else {
-                return geometry.size.height + bottomSheetPosition.rawValue // rawValue is negative
+                return height + position.rawValue // rawValue is negative
             }
         } else {
-            return bottomSheetPosition.rawValue
+            return position.rawValue
         }
     }
 
@@ -428,10 +427,21 @@ where BottomSheetPositionEnum.RawValue == CGFloat,
     
     // Initializer
     init(bottomSheetPosition: Binding<BottomSheetPositionEnum>,
+         availablePositions: [BottomSheetPositionEnum],
          options: [BottomSheet.Options],
          @ViewBuilder headerContent: () -> HContent?,
          @ViewBuilder mainContent: () -> MContent) {
         self._bottomSheetPosition = bottomSheetPosition
+        self.allCases = {
+            // Assumption: if using absolutePositionValue with negative values, none of the values will cross the other side.
+            // That is, a positive value would not result in a higher sheet position than a negative value.
+            // If this assumption is broken then allCases cannot be precomputed like this.
+            let placeholderHeight: CGFloat = 5000
+            let optAbsPosValue = options.absolutePositionValue
+            return availablePositions.sorted(by: { a, b in
+                Self.positionFromBottom(height: placeholderHeight, position: a, optionAbsolutePositionValue: optAbsPosValue) < Self.positionFromBottom(height: placeholderHeight, position: b, optionAbsolutePositionValue: optAbsPosValue)
+            })
+        }()
         self.options = options
         self.headerContent = headerContent()
         self.mainContent = mainContent()
@@ -441,17 +451,20 @@ where BottomSheetPositionEnum.RawValue == CGFloat,
 internal extension BottomSheetView
 where HContent == ModifiedContent<ModifiedContent<Text, _EnvironmentKeyWritingModifier<Int?>>, _PaddingLayout> {
     init(bottomSheetPosition: Binding<BottomSheetPositionEnum>,
+         availablePositions: [BottomSheetPositionEnum],
          options: [BottomSheet.Options],
          title: String?,
          @ViewBuilder content: () -> MContent) {
         if title == nil {
             self.init(bottomSheetPosition: bottomSheetPosition,
+                      availablePositions: availablePositions,
                       options: options,
                       headerContent: { return nil },
                       mainContent: content)
         } else {
             let hContent = Text(title!).font(.title).bold().lineLimit(1).padding(.bottom) as? HContent
             self.init(bottomSheetPosition: bottomSheetPosition,
+                      availablePositions: availablePositions,
                       options: options,
                       headerContent: { hContent },
                       mainContent: content)

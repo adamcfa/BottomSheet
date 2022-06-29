@@ -227,15 +227,9 @@ where BottomSheetPositionEnum.RawValue == CGFloat,
     // Functions
     fileprivate func opacityValue(geometry: GeometryProxy) -> Double {
         if self.options.backgroundBlur {
-            if self.options.absolutePositionValue {
-                return Double(
-                    (self.positionFromBottom(geometry: geometry) - self.translation) / geometry.size.height
-                )
-            } else {
-                return Double(
-                    (self.positionFromBottom(geometry: geometry) * geometry.size.height - self.translation) / geometry.size.height
-                )
-            }
+            return Double(
+                (self.positionFromBottom(geometry: geometry) - self.translation) / geometry.size.height
+            )
         } else {
             return 0
         }
@@ -253,23 +247,13 @@ where BottomSheetPositionEnum.RawValue == CGFloat,
     }
     
     fileprivate func frameHeightValue(geometry: GeometryProxy) -> Double {
-        if self.options.absolutePositionValue {
-            return min(
-                max(
-                    self.positionFromBottom(geometry: geometry) - self.translation,
-                    0
-                ),
-                geometry.size.height * 1.05
-            )
-        } else {
-            return min(
-                max(
-                    (geometry.size.height * self.positionFromBottom(geometry: geometry)) - self.translation,
-                    0
-                ),
-                geometry.size.height * 1.05
-            )
-        }
+        return min(
+            max(
+                self.positionFromBottom(geometry: geometry) - self.translation,
+                0
+            ),
+            geometry.size.height * 1.05
+        )
     }
     
     fileprivate func offsetYValue(geometry: GeometryProxy) -> Double {
@@ -279,36 +263,21 @@ where BottomSheetPositionEnum.RawValue == CGFloat,
                 geometry.size.height * -0.05
             )
         } else if self.isBottomPosition {
-            if self.options.absolutePositionValue {
-                return max(
-                    geometry.size.height - self.positionFromBottom(geometry: geometry) +
-                    self.translation + geometry.safeAreaInsets.bottom,
-                    geometry.size.height * -0.05
-                )
-            } else {
-                return max(
-                    geometry.size.height - (geometry.size.height * self.positionFromBottom(geometry: geometry)) +
-                    self.translation + geometry.safeAreaInsets.bottom,
-                    geometry.size.height * -0.05
-                )
-            }
+            return max(
+                geometry.size.height - self.positionFromBottom(geometry: geometry) +
+                self.translation + geometry.safeAreaInsets.bottom,
+                geometry.size.height * -0.05
+            )
         } else {
-            if self.options.absolutePositionValue {
-                return max(
-                    geometry.size.height - self.positionFromBottom(geometry: geometry) + self.translation,
-                    geometry.size.height * -0.05
-                )
-            } else {
-                return max(
-                    geometry.size.height - (geometry.size.height * self.positionFromBottom(geometry: geometry)) +
-                    self.translation,
-                    geometry.size.height * -0.05
-                )
-            }
+            return max(
+                geometry.size.height - self.positionFromBottom(geometry: geometry) + self.translation,
+                geometry.size.height * -0.05
+            )
         }
     }
 
-    /// Given the current `bottomSheetPosition` and `geometry`, what should the position of the sheet be in points from the bottom?
+    /// Given the current `self.bottomSheetPosition`, `self.options`, and `geometry`,
+    /// how many points from the bottom should the top of the sheet be?
     fileprivate func positionFromBottom(geometry: GeometryProxy) -> CGFloat {
         Self.positionFromBottom(
             height: geometry.size.height,
@@ -324,7 +293,8 @@ where BottomSheetPositionEnum.RawValue == CGFloat,
                 return height + position.rawValue // rawValue is negative
             }
         } else {
-            return position.rawValue
+            let percent = position.rawValue >= 0 ? position.rawValue : (1 + position.rawValue)
+            return height * percent
         }
     }
 

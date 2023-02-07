@@ -83,6 +83,7 @@ where BottomSheetPositionEnum.RawValue == CGFloat,
                                     }
                             )
                     })
+                    .accessibilityIdentifier("bottomSheetDragIndicator")
                 }
                 
                 // Header

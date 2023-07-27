@@ -112,6 +112,7 @@ internal extension BottomSheetView {
         .transaction { transform in
             transform.disablesAnimations = true
         }
+        .accessibilityIdentifier("bottomSheetDragIndicator")
     }
     
     func bottomSheetContent(with geometry: GeometryProxy) -> some View {

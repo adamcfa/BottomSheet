@@ -78,6 +78,18 @@ internal extension BottomSheetView {
         .transition(.move(
             edge: self.isIPadFloatingOrMac ? .top : .bottom
         ))
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didEnterBackgroundNotification)) { _ in
+            if case .relative(let percentage) = bottomSheetPosition {
+                // Calculate the difference between the expected content height and the actual content height. If
+                // these values are not the same then we reset the translation to 0 in order to recalculate the layout.
+                let expectedContentHeight = geometry.size.height * percentage
+                let actualContentHeight = self.height(with: geometry)
+                let contentHeightDifference = expectedContentHeight - actualContentHeight
+                if contentHeightDifference != 0 {
+                    self.translation = 0
+                }
+            }
+        }
     }
     
     func dragIndicator(with geometry: GeometryProxy) -> some View {

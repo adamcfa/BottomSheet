@@ -1,6 +1,40 @@
 BottomSheet Changelog
 ==================
 
+#### v3.1.1
+- Fix #101 (thx @grandsir)
+- Fix #97 (#130)
+- Fix #119 (#120)
+- Fix #106
+
+#### v3.1.0
+- Added the `.enableAccountingForKeyboardHeight(Bool)` modifier #97
+- Added the `.enableFloatingIPadSheet(Bool)` modifier
+- Added the `.sheetWidth(BottomSheetWidth)` modifier
+- Fix #94
+
+#### v3.0.2
+- Added `.customThreshold(Double)` modifier #8, #88
+
+#### v3.0.1
+- Fix CocoaPods build #85
+- Fix close button not shown in dark mode #86
+
+#### v3.0.0
+- Recoded the project
+- Added iPhone landscape support
+- Added iPad support
+- Added MacOS support
+- Changed from options to view modifiers
+- Cleaned up the code (swiftLint and splitting it up)
+- Added dynamic size support
+- Added onDismiss modifier
+- Added dragIndicatorAction modifier
+- Added dragPositionSwitchAction modifier
+- Added dragGesture listener
+- Changed customBackground to not rely on AnyView
+- Fixed onAppear only called once #65
+
 #### v2.8.0
 - Add `disableBottomSafeAreaInsets` option #63
 - Add `disableFlickThrough` option #61
@@ -13,7 +47,7 @@ BottomSheet Changelog
 
 #### v2.6.0
 - Fix critical bug with `.appleScrollBehavior` #40
-- Update codestyle
+- Update code-style
 - Remove not used file
 - Update Readme
 - Renamed tapToDissmiss option tapToDismiss #43

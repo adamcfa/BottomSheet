@@ -187,8 +187,24 @@ internal extension BottomSheetView {
             // On iPad use 30% of the width
             return geometry.size.width * 0.3
         } else {
-            // On iPhone or iPad split screen use 100% of the width
-            return geometry.size.width
+
+            // As a default use 100% of the width.
+            guard let window = UIApplication.shared.windows.first,
+                  let interfaceOrientation = window.windowScene?.interfaceOrientation
+            else {
+                return geometry.size.width
+            }
+
+            switch interfaceOrientation {
+            // On iPhone portrait or iPad split screen use 100% of the width.
+            case .portrait, .portraitUpsideDown:
+                return geometry.size.width
+            // On iPhone landscape use 100% of the width.
+            case .landscapeLeft, .landscapeRight:
+                return geometry.size.width // * 0.4 in main repo
+            default:
+                return geometry.size.width
+            }
         }
 #endif
     }

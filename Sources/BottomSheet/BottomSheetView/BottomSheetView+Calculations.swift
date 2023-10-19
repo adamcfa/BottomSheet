@@ -94,7 +94,25 @@ internal extension BottomSheetView {
             self.configuration.isResizable && self.configuration.isDragIndicatorShown ? 20 : 0
         )
     }
-    
+
+    // Whether the BottomSheet should float on rotation
+    var shouldFloat: Bool {
+        guard let window = UIApplication.shared.windows.first,
+              let interfaceOrientation = window.windowScene?.interfaceOrientation
+        else {
+            return false
+        }
+
+        switch interfaceOrientation {
+        case .portrait, .portraitUpsideDown:
+            return false
+        case .landscapeLeft, .landscapeRight:
+            return true
+        default:
+            return false
+        }
+    }
+
     // The maximum height of the BottomSheet
     func maxBottomSheetHeight(with geometry: GeometryProxy) -> CGFloat {
         // Screen height without safe areas and padding
@@ -186,7 +204,7 @@ internal extension BottomSheetView {
         if self.isIPad {
             // On iPad use 30% of the width
             return geometry.size.width * 0.3
-        } else if UIDevice.current.userInterfaceIdiom == .phone && UIDevice.current.orientation.isLandscape {
+        } else if shouldFloat {
             // On iPhone landscape use 40% of the width
             return geometry.size.width * 0.4
         } else {
